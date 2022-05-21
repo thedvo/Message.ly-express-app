@@ -3,7 +3,6 @@
 const db = require('../db');
 const ExpressError = require('../expressError');
 const bcrypt = require('bcrypt');
-
 const { BCRYPT_WORK_FACTOR } = require('../config');
 
 /** User of the site. */
@@ -14,25 +13,28 @@ class User {
 	 */
 
 	static async register({ username, password, first_name, last_name, phone }) {
+		// take info from the request body and run the bcrypt has method.
 		const hashedPassword = await bcrypt.hash(password, BCRYPT_WORK_FACTOR);
 
+		// once hashed, make the insert query with the hashed password and other info
 		const result = await db.query(
 			'INSERT INTO users (username, password, first_name, last_name, phone, join_at, last_login_at) VALUES ($1, $2, $3, $4, $5, current_timestamp, current_timestamp) RETURNING username, password, first_name, last_name, phone',
 			[username, hashedPassword, first_name, last_name, phone]
 		);
-
 		return result.rows[0];
 	}
 
 	/** Authenticate: is this username/password valid? Returns boolean. */
 
 	static async authenticate(username, password) {
+		// get the hashed password of the passed in username
 		const result = await db.query(
 			'SELECT password FROM users WHERE username=$1',
 			[username]
 		);
 		let user = result.rows[0];
 
+		// return the user and if the passwords match. If not, it should throw an error in the route.
 		return user && (await bcrypt.compare(password, user.password));
 	}
 
