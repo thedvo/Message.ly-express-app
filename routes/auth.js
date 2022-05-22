@@ -1,9 +1,10 @@
 const express = require('express');
+const router = new express.Router();
+const jwt = require('jsonwebtoken');
+
+const User = require('../models/user');
 const { SECRET_KEY } = require('../config');
 const ExpressError = require('../expressError');
-const User = require('../models/user');
-const { register, authenticate } = require('../models/user');
-const router = new express.Router();
 
 /** POST /login - login: {username, password} => {token}
  *
@@ -15,13 +16,13 @@ router.post('/login', async function (req, res, next) {
 		// take username/password from the response body
 		const { username, password } = req.body;
 		// pass them into the authenticate method from the User Class
-		if (await authenticate(username, password)) {
+		if (await User.authenticate(username, password)) {
 			// if everything goes well with login, we will call jwt.sign to make a new token
-			let token = jwt.sign({ username }, SECRET_KEY);
+			const token = jwt.sign({ username }, SECRET_KEY);
 			User.updateLoginTimestamp(username);
 			return res.json({ token });
 		} else {
-			throw new ExpressError('Invalid username/password', 404);
+			throw new ExpressError('Invalid username/password', 400);
 		}
 	} catch (e) {
 		return next(e);
@@ -37,7 +38,7 @@ router.post('/login', async function (req, res, next) {
 
 router.post('/register', async function (req, res, next) {
 	try {
-		let { user } = await User.register(req.body);
+		let { username } = await User.register(req.body);
 		let token = jwt.sign({ username }, SECRET_KEY);
 		User.updateLoginTimestamp(username);
 		return res.json({ token });

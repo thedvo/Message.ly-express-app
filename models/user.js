@@ -32,7 +32,7 @@ class User {
 			'SELECT password FROM users WHERE username=$1',
 			[username]
 		);
-		let user = result.rows[0];
+		const user = result.rows[0];
 
 		// return the user and if the passwords match. If not, it should throw an error in the route.
 		return user && (await bcrypt.compare(password, user.password));
@@ -56,7 +56,7 @@ class User {
 
 	static async all() {
 		const result = await db.query(
-			'SELECT first_name, last_name, phone FROM users'
+			'SELECT username, first_name, last_name, phone FROM users'
 		);
 
 		return result.rows;
